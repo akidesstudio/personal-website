@@ -1,0 +1,7 @@
+# Claude Code local settings
+.claude/
+
+# OS / OneDrive junk
+Thumbs.db
+desktop.ini
+.DS_Store
