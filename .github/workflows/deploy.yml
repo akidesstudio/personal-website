@@ -1,0 +1,35 @@
+name: Deploy to VPS
+
+# main'ga har push bo'lganda (yoki qo'lda ishga tushirilganda) saytni serverga yuklaydi
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Bir vaqtda faqat bitta deploy ishlasin
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repozitoriyni olish
+        uses: actions/checkout@v4
+
+      - name: SSH kalitni sozlash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: rsync orqali serverga yuklash
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.gitignore' \
+            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/sites/personal-website/"
